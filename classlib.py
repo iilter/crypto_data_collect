@@ -41,7 +41,7 @@ class FearAndGreed:
 
     @staticmethod
     def getData(periodCount):
-        print("getData")
+        print("getData method")
         url = 'https://api.alternative.me/fng/'
         prm = {'limit': periodCount}
         response = requests.get(url, params=prm)
