@@ -8,4 +8,5 @@
 /inspectionProfiles/profiles_settings.xml
 /inspectionProfiles/Project_Default.xml
 /vcs.xml
+/__pycache__
 /config/config.ini

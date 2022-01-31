@@ -1,5 +1,4 @@
 import sys
-import json
 from datetime import datetime
 
 import mariadb as mariadb
@@ -10,7 +9,7 @@ if __name__ == '__main__':
     config = apilib.ConfigFile()
     config.section = "mariadb"
     dbConfig = config.readConfig()
-    print(dbConfig)
+    # print(dbConfig)
 
     # Connect to MariaDB Platform
     try:
@@ -30,18 +29,14 @@ if __name__ == '__main__':
     cursor = dbConnection.cursor()
 
     fag = apilib.FearAndGreed()
-    records = fag.getData(2)
-    #    records = api.getFearAndGreedData(2)
-    for ix in records:
-        value = int(ix['value'])
-        classification = ix['value_classification']
-        ts = int(ix['timestamp'])
+    records = fag.getData(cursor)
+    for record in records:
+        ts = int(record['timestamp'])
         dt = datetime.fromtimestamp(ts)
-
-        #     db.addFearAndGreed(cursor, dt, value, classification)
         fag.cursor = cursor
-        fag.indexValue = value
-        fag.indexDate = dt
-        fag.classification = classification
+        fag.periodDate = dt.strftime("%Y-%m-%d")
+        fag.periodTime = dt.strftime("%H:%M:%S")
+        fag.indexValue = int(record['value'])
+        fag.classification = record['value_classification']
         fag.addData()
 
