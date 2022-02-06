@@ -18,12 +18,11 @@ def main():
     # Read config.ini file
     try:
         config_dir = resource_path("config")
-        file_name = config_dir + '\\' + 'config.ini'
+        config_file = config_dir + '\\' + 'config.ini'
         config = cfg()
-        config.filename = file_name
+        config.filename = str(config_file)
         config.section = "mariadb"
         dbConfig = config.readConfig()
-        # print(dbConfig)
     except:
         print(f"Could not read config file")
         sys.exit(1)
@@ -61,5 +60,4 @@ def main():
     dbConnection.close()
 
 
-if __name__ == '__main__':
-    main()
+main()

@@ -6,7 +6,7 @@ import requests
 
 
 class ConfigFile:
-    def __init__(self, filename='config.ini', section='mariadb'):
+    def __init__(self, filename="config.ini", section="mariadb"):
         self.filename = filename
         self.section = section
 
