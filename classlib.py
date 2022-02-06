@@ -6,7 +6,7 @@ import requests
 
 
 class ConfigFile:
-    def __init__(self, filename='config/config.ini', section='mariadb'):
+    def __init__(self, filename='config.ini', section='mariadb'):
         self.filename = filename
         self.section = section
 
@@ -16,14 +16,14 @@ class ConfigFile:
         parser.read(self.filename)
 
         # get section, default to mysql
-        db = {}
+        parameters = {}
         if parser.has_section(self.section):
             items = parser.items(self.section)
             for item in items:
-                db[item[0]] = item[1]
+                parameters[item[0]] = item[1]
         else:
             raise Exception('{0} not found in the {1} file'.format(self.section, self.filename))
-        return db
+        return parameters
 
 
 class FearAndGreed:
@@ -40,7 +40,7 @@ class FearAndGreed:
     def addData(self):
         # print("addData")
         try:
-            self.cursor.execute("INSERT INTO feargreed (period_date, period_time, index_value, classification, "
+            self.cursor.execute("INSERT INTO fear_greed (period_date, period_time, fear_index, classification, "
                                 "update_date, update_time) VALUES (?, ?, ?, ?, ?, ?)",
                                 (self.periodDate, self.periodTime, self.indexValue, self.classification,
                                  self.updateDate, self.updateTime))
@@ -51,7 +51,7 @@ class FearAndGreed:
             log.errorNo = e.errno
             log.errorMessage = e.errmsg
             log.moduleName = type(self).__name__  # "FearAndGreed().addData()"
-            log.explanation = "while (INSERT INTO feargreed)"
+            log.explanation = "while (INSERT INTO fear_greed)"
             log.addData()
 
     @staticmethod

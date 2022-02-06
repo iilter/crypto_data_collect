@@ -1,15 +1,32 @@
+import os
 import sys
 from datetime import datetime
 
 import mariadb as mariadb
 
-import classlib as apilib
+from classlib import ConfigFile as cfg
+from classlib import FearAndGreed as fagClass
 
-if __name__ == '__main__':
-    config = apilib.ConfigFile()
-    config.section = "mariadb"
-    dbConfig = config.readConfig()
-    # print(dbConfig)
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
+
+def main():
+    # Read config.ini file
+    try:
+        config_dir = resource_path("config")
+        file_name = config_dir + '\\' + 'config.ini'
+        config = cfg()
+        config.filename = file_name
+        config.section = "mariadb"
+        dbConfig = config.readConfig()
+        # print(dbConfig)
+    except:
+        print(f"Could not read config file")
+        sys.exit(1)
 
     # Connect to MariaDB Platform
     try:
@@ -28,7 +45,7 @@ if __name__ == '__main__':
     # Get Cursor
     cursor = dbConnection.cursor()
 
-    fag = apilib.FearAndGreed()
+    fag = fagClass()
     records = fag.getData(cursor)
     for record in records:
         ts = int(record['timestamp'])
@@ -40,3 +57,9 @@ if __name__ == '__main__':
         fag.classification = record['value_classification']
         fag.addData()
 
+    dbConnection.commit()
+    dbConnection.close()
+
+
+if __name__ == '__main__':
+    main()

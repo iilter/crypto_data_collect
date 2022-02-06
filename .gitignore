@@ -9,4 +9,7 @@
 /inspectionProfiles/Project_Default.xml
 /vcs.xml
 /__pycache__
+/dist
+/build
 /config/config.ini
+/*.spec
