@@ -6,7 +6,7 @@ import requests
 
 
 class ConfigFile:
-    def __init__(self, filename="config.ini", section="mariadb"):
+    def __init__(self, filename="config.ini", section=None):
         self.filename = filename
         self.section = section
 
@@ -28,7 +28,8 @@ class ConfigFile:
 
 class FearAndGreed:
     def __init__(self, cursor=None, periodDate=None, periodTime=None, indexValue=None, classification=None,
-                 updateDate=datetime.now().strftime("%Y-%m-%d"), updateTime=datetime.now().strftime("%H:%M:%S")):
+                 updateDate=datetime.now().strftime("%Y-%m-%d"),
+                 updateTime=datetime.now().strftime("%H:%M:%S")):
         self.cursor = cursor
         self.periodDate = periodDate
         self.periodTime = periodTime
@@ -38,7 +39,6 @@ class FearAndGreed:
         self.updateTime = updateTime
 
     def addData(self):
-        # print("addData")
         try:
             self.cursor.execute("INSERT INTO fear_greed (period_date, period_time, fear_index, classification, "
                                 "update_date, update_time) VALUES (?, ?, ?, ?, ?, ?)",
@@ -54,11 +54,14 @@ class FearAndGreed:
             log.explanation = "while (INSERT INTO fear_greed)"
             log.addData()
 
-    @staticmethod
-    def getData(cursor=None, periodCount=1):
-        # print("getData method")
-        url = 'https://api.alternative.me/fng/'
-        prm = {'limit': periodCount}
+    def getData(self, url=None, recordCount=1):
+        #
+        # recordCount = 0 ise bütün index bilgileri çekilir
+        # recordCount = 1 ise son index bilgisi çekilir
+        # recordCount = N ise son N tane index bilgisi çekilir
+        #
+        prm = {'limit': recordCount}
+        cursor = self.cursor
         try:
             response = requests.get(url, params=prm)
             response.raise_for_status()

@@ -15,13 +15,27 @@ def resource_path(relative_path):
 
 
 def main():
-    # Read config.ini file
+    # print(f"Arguments count: {len(sys.argv)}")
+    # for i, arg in enumerate(sys.argv):
+    #     print(f"Argument {i:>6}:{arg}")
+
+    #
+    # Çekilecek kayıt sayısının programa dışarıdan argüman olarak verilip verilmediği kontrol edilir.
+    # Arguman sayısı > 1 ise dışarıdan verilmiştir (sys.argv[1]).
+    # Çekilecek kayıt sayısı programa argüman olarak verilmemiş ise tek (son) kayıt çekmek için değer 1 yapılır.
+    # sys.argv[0] da programın ismi yer alır
+    #
+    argumentRecordCount = 1
+    if len(sys.argv) > 1:
+        argumentRecordCount = sys.argv[1]
+
+    config_dir = resource_path("config")
+    config_file = config_dir + '\\' + 'config.ini'
+    # Read database section from config.ini
+    config = cfg()
+    config.filename = config_file
     try:
-        config_dir = resource_path("config")
-        config_file = config_dir + '\\' + 'config.ini'
-        config = cfg()
-        config.filename = str(config_file)
-        config.section = "mariadb"
+        config.section = "database"
         dbConfig = config.readConfig()
     except:
         print(f"Could not read config file")
@@ -44,12 +58,21 @@ def main():
     # Get Cursor
     cursor = dbConnection.cursor()
 
+    # Read fearandgreed section from config.ini
+    try:
+        config.section = "fearandgreed"
+        fagConfig = config.readConfig()
+    except:
+        print(f"Could not read config file")
+        sys.exit(1)
+
+    url = fagConfig["url"]
     fag = fagClass()
-    records = fag.getData(cursor)
+    fag.cursor = cursor
+    records = fag.getData(url, argumentRecordCount)
     for record in records:
         ts = int(record['timestamp'])
         dt = datetime.fromtimestamp(ts)
-        fag.cursor = cursor
         fag.periodDate = dt.strftime("%Y-%m-%d")
         fag.periodTime = dt.strftime("%H:%M:%S")
         fag.indexValue = int(record['value'])
