@@ -1,18 +1,13 @@
-import os
-import sys
 from datetime import datetime
-import mariadb as mariadb
+import sys
+import mariadb
 
 import funclib
 from classlib import ConfigFile as cfg
-from classlib import FearAndGreed as fagClass
+from classlib import TakerBuySell as takerBuySellClass
 
 
 def main():
-    # print(f"Arguments count: {len(sys.argv)}")
-    # for i, arg in enumerate(sys.argv):
-    #     print(f"Argument {i:>6}:{arg}")
-
     #
     # Çekilecek kayıt sayısının programa dışarıdan argüman olarak verilip verilmediği kontrol edilir.
     # Arguman sayısı > 1 ise dışarıdan verilmiştir (sys.argv[1]).
@@ -52,29 +47,35 @@ def main():
     # Get Cursor
     cursor = dbConnection.cursor()
 
-    # Read fearandgreed section from config.ini
+    # Read cryptoquant section from config.ini
     try:
-        config.section = "fearandgreed"
-        fagConfig = config.readConfig()
+        config.section = "cryptoquant"
+        quantConfig = config.readConfig()
     except:
         print(f"Could not read config file")
         sys.exit(1)
 
-    url = fagConfig["url"]
-    fag = fagClass()
-    fag.cursor = cursor
-    records = fag.getData(url, argumentRecordCount)
+    print(f"{quantConfig}")
+
+    url = quantConfig["url"]
+    accessToken = quantConfig["access_token"]
+
+    buysell = takerBuySellClass()
+    buysell.cursor = cursor
+    records = buysell.getData(url, accessToken, argumentRecordCount)
+    print(f"{records}")
+    print(f"{len(records)}")
     for record in records:
-        ts = int(record['timestamp'])
-        dt = datetime.fromtimestamp(ts)
-        fag.periodDate = dt.strftime("%Y-%m-%d")
-        fag.periodTime = dt.strftime("%H:%M:%S")
-        fag.indexValue = int(record['value'])
-        fag.classification = record['value_classification']
-        fag.addData()
+        dt = datetime.strptime(record["date"], "%Y-%m-%d").date()
+        buysell.indexDate = dt
+        buysell.takerBuyVolume = record["taker_buy_volume"]
+        buysell.takerSellVolume = record["taker_sell_volume"]
+        buysell.takerBuyRatio = record["taker_buy_ratio"]
+        buysell.takerSellRatio = record["taker_sell_ratio"]
+        buysell.takerBuySellRatio = record["taker_buy_sell_ratio"]
+        buysell.addData()
 
     dbConnection.commit()
     dbConnection.close()
-
 
 main()

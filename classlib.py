@@ -1,5 +1,6 @@
 from configparser import ConfigParser
 from datetime import datetime
+from datetime import timedelta
 
 import mariadb
 import requests
@@ -51,7 +52,7 @@ class FearAndGreed:
             log.errorNo = e.errno
             log.errorMessage = e.errmsg
             log.moduleName = type(self).__name__  # "FearAndGreed().addData()"
-            log.explanation = "while (INSERT INTO fear_greed)"
+            log.explanation = "INSERT INTO fear_greed"
             log.addData()
 
     def getData(self, url=None, recordCount=1):
@@ -60,8 +61,8 @@ class FearAndGreed:
         # recordCount = 1 ise son index bilgisi çekilir
         # recordCount = N ise son N tane index bilgisi çekilir
         #
-        prm = {'limit': recordCount}
         cursor = self.cursor
+        prm = {'limit': recordCount}
         try:
             response = requests.get(url, params=prm)
             response.raise_for_status()
@@ -110,6 +111,103 @@ class FearAndGreed:
                 log.errorNo = err.response.status_code
                 log.errorMessage = err.response.text
                 log.moduleName = "FearAndGreed getData()"
+                log.explanation = err.response.url
+                log.addData()
+
+
+class TakerBuySell:
+    def __init__(self, cursor=None, indexDate=None, takerBuyVolume=None, takerSellVolume=None,
+                 takerBuyRatio=None, takerSellRatio=None, takerBuySellRatio=None,
+                 updateDate=datetime.now().strftime("%Y-%m-%d"),
+                 updateTime=datetime.now().strftime("%H:%M:%S")
+                 ):
+        self.cursor = cursor
+        self.indexDate = indexDate
+        self.takerBuyVolume = takerBuyVolume
+        self.takerSellVolume = takerSellVolume
+        self.takerBuyRatio = takerBuyRatio
+        self.takerSellRatio = takerSellRatio
+        self.takerBuySellRatio = takerBuySellRatio
+        self.updateDate = updateDate
+        self.updateTime = updateTime
+
+    def addData(self):
+        try:
+            self.cursor.execute("INSERT INTO taker_buy_sell (index_date, taker_buy_volume, taker_sell_volume, "
+                                "taker_buy_ratio, taker_sell_ratio, taker_buy_sell_ratio, "
+                                "update_date, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                (self.indexDate, self.takerBuyVolume, self.takerSellVolume,
+                                 self.takerBuyRatio, self.takerSellRatio, self.takerBuySellRatio,
+                                 self.updateDate, self.updateTime))
+        except mariadb.Error as e:
+            print(f"Error: {e.errno} {e.errmsg}")
+            log = ErrorLog()
+            log.cursor = self.cursor
+            log.errorNo = e.errno
+            log.errorMessage = e.errmsg
+            log.moduleName = type(self).__name__  # "TakerBuySell addData()"
+            log.explanation = "INSERT INTO taker_buy_sell"
+            log.addData()
+
+    def getData(self, url=None, accessToken=None, recordCount=1):
+        fromDate = (datetime.now() - timedelta(days=10)).strftime('%Y%m%d')
+        print(f"{fromDate}")
+
+        cursor = self.cursor
+        headers = {'Authorization': 'Bearer ' + accessToken}
+        prm = {'window': 'day',
+               #               'from': fromDate,
+               #               'to': fromDate,
+               'limit': recordCount,
+               'exchange': 'all_exchange'
+               }
+        try:
+            response = requests.get(url, headers=headers, params=prm)
+            response.raise_for_status()
+            records = response.json()
+            return records['result']['data']
+        except requests.exceptions.HTTPError as errh:
+            if cursor is None:
+                print("Http Error:", errh)
+            else:
+                log = ErrorLog()
+                log.cursor = cursor
+                log.errorNo = errh.response.status_code
+                log.errorMessage = errh.response.text
+                log.moduleName = "TakerBuySell getData()"
+                log.explanation = "Http Error: " + errh.response.url
+                log.addData()
+        except requests.exceptions.ConnectionError as errc:
+            if cursor is None:
+                print("Error Connecting:", errc)
+            else:
+                log = ErrorLog()
+                log.cursor = cursor
+                log.errorNo = errc.response.status_code
+                log.errorMessage = errc.response.text
+                log.moduleName = "TakerBuySell getData()"
+                log.explanation = "Error Connecting: " + errc.response.url
+                log.addData()
+        except requests.exceptions.Timeout as errt:
+            if cursor is None:
+                print("Timeout Error:", errt)
+            else:
+                log = ErrorLog()
+                log.cursor = cursor
+                log.errorNo = errt.response.status_code
+                log.errorMessage = errt.response.text
+                log.moduleName = "TakerBuySell getData()"
+                log.explanation = "Timeout Error: " + errt.response.url
+                log.addData()
+        except requests.exceptions.RequestException as err:
+            if cursor is None:
+                print(err)
+            else:
+                log = ErrorLog()
+                log.cursor = cursor
+                log.errorNo = err.response.status_code
+                log.errorMessage = err.response.text
+                log.moduleName = "TakerBuySell getData()"
                 log.explanation = err.response.url
                 log.addData()
 
