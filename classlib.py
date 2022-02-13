@@ -747,6 +747,112 @@ class Sopr:
             log.addData()
 
 
+class Leverage:
+    def __init__(self, cursor=None, indexDate=None, estimatedLeverageRatio=None,
+                 updateDate=datetime.now().strftime("%Y-%m-%d"),
+                 updateTime=datetime.now().strftime("%H:%M:%S")
+                 ):
+        self.cursor = cursor
+        self.indexDate = indexDate
+        self.estimatedLeverageRatio = estimatedLeverageRatio
+        self.updateDate = updateDate
+        self.updateTime = updateTime
+
+    def addData(self):
+        try:
+            self.cursor.execute("INSERT INTO leverage (index_date, estimated_leverage_ratio, "
+                                "update_date, update_time) VALUES (?, ?, ?, ?)",
+                                (self.indexDate, self.estimatedLeverageRatio,
+                                 self.updateDate, self.updateTime))
+        except mariadb.Error as e:
+            # print(f"Error: {e.errno} {e.errmsg}")
+            log = ErrorLog()
+            log.cursor = self.cursor
+            log.errorNo = e.errno
+            log.errorMessage = e.errmsg
+            log.moduleName = type(self).__name__
+            log.explanation = "INSERT INTO leverage"
+            log.addData()
+
+    def getData(self, url=None, accessToken=None, exchange=None, window=None, fromDate=None,
+                toDate=None, limit=1, returnFormat=None):
+
+        cursor = self.cursor
+        headers = {'Authorization': 'Bearer ' + accessToken}
+
+        # fromDate girilmemiş ise en erken tarihten itibaren
+        # toDate girilmemiş ise en son son tarihten itibaren
+        if (toDate == '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'format': returnFormat
+                   }
+        if (toDate == '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'format': returnFormat
+                   }
+        try:
+            response = requests.get(url, headers=headers, params=prm)
+            response.raise_for_status()
+            records = response.json()
+            return records['result']['data']
+        except requests.exceptions.HTTPError as errh:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errh.response.status_code
+            log.errorMessage = errh.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Http Error: " + errh.response.url
+            log.addData()
+        except requests.exceptions.ConnectionError as errc:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errc.response.status_code
+            log.errorMessage = errc.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Error Connecting: " + errc.response.url
+            log.addData()
+        except requests.exceptions.Timeout as errt:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errt.response.status_code
+            log.errorMessage = errt.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Timeout Error: " + errt.response.url
+            log.addData()
+        except requests.exceptions.RequestException as err:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = err.response.status_code
+            log.errorMessage = err.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = err.response.url
+            log.addData()
+
+
 class ErrorLog:
     def __init__(self, cursor=None, transactionDate=datetime.now().strftime("%Y-%m-%d"),
                  transactionTime=datetime.now().strftime("%H:%M:%S"), moduleName=None, errorNo=None,
