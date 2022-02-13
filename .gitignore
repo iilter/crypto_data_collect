@@ -12,5 +12,6 @@
 /dist
 /build
 /config/config.ini
+/config.ini
 /*.spec
 /app.log

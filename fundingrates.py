@@ -5,7 +5,7 @@ import click
 
 import funclib
 from classlib import ConfigFile as cfg
-from classlib import TakerBuySell as takerBuySellClass
+from classlib import FundingRates as fundingRatesClass
 
 
 @click.command()
@@ -27,18 +27,6 @@ def main(exchange, window, from_date, to_date, limit, return_format):
     print(f"limit={limit}")
     print(f"return_format={return_format}")
 
-    #
-    # Programa dışarıdan argüman olarak verilip verilmediği kontrol edilir.
-    # Arguman sayısı (sys.argv[1]) > 1 ise programa dışarıdan argüman verilmiştir.
-    # Çekilecek kayıt sayısı programa argüman olarak verilmemiş ise tek (son) kayıt çekmek için değer 1 yapılır.
-    # sys.argv[0] da programın ismi yer alır
-    #
-    # argumentRecordCount = 1
-    # if len(sys.argv) > 1:
-    #     argumentRecordCount = sys.argv[1]
-
-    # config_dir = funclib.resource_path("config")
-    # config_file = config_dir + '\\' + 'config.ini'
     config_file = 'config.ini'
     # Read database section from config.ini
     config = cfg()
@@ -80,24 +68,20 @@ def main(exchange, window, from_date, to_date, limit, return_format):
 
     # print(f"{quantConfig}")
 
-    url = quantConfig["url_taker_buy_sell"]
+    url = quantConfig["url_funding_rates"]
     accessToken = quantConfig["access_token"]
 
-    buysell = takerBuySellClass()
-    buysell.cursor = cursor
-    records = buysell.getData(url, accessToken, exchange, window, from_date, to_date, limit, return_format)
+    funding = fundingRatesClass()
+    funding.cursor = cursor
+    records = funding.getData(url, accessToken, exchange, window, from_date, to_date, limit, return_format)
     if (records is not None) and (len(records) > 0):
         print(f"{records}")
         print(f"{len(records)}")
         for record in records:
             dt = datetime.strptime(record["date"], "%Y-%m-%d").date()
-            buysell.indexDate = dt
-            buysell.takerBuyVolume = record["taker_buy_volume"]
-            buysell.takerSellVolume = record["taker_sell_volume"]
-            buysell.takerBuyRatio = record["taker_buy_ratio"]
-            buysell.takerSellRatio = record["taker_sell_ratio"]
-            buysell.takerBuySellRatio = record["taker_buy_sell_ratio"]
-            buysell.addData()
+            funding.indexDate = dt
+            funding.fundingRates = record["funding_rates"]
+            funding.addData()
 
     dbConnection.commit()
     dbConnection.close()
