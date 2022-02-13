@@ -1081,6 +1081,235 @@ class Inflow:
             log.addData()
 
 
+class ExchangeToExchange:
+    def __init__(self, cursor=None, indexDate=None, flowTotal=None, flowMean=None,
+                 transactionsCountFlow=None,
+                 updateDate=datetime.now().strftime("%Y-%m-%d"),
+                 updateTime=datetime.now().strftime("%H:%M:%S")
+                 ):
+        self.cursor = cursor
+        self.indexDate = indexDate
+        self.flowTotal = flowTotal
+        self.flowMean = flowMean
+        self.transactionsCountFlow = transactionsCountFlow
+        self.updateDate = updateDate
+        self.updateTime = updateTime
+
+    def addData(self):
+        try:
+            self.cursor.execute(
+                "INSERT INTO exchange_to_exchange (index_date, flow_total, flow_mean, transactions_count_flow, "
+                " update_date, update_time) VALUES (?, ?, ?, ?, ? ,?)",
+                (self.indexDate, self.flowTotal, self.flowMean, self.transactionsCountFlow,
+                 self.updateDate, self.updateTime))
+        except mariadb.Error as e:
+            # print(f"Error: {e.errno} {e.errmsg}")
+            log = ErrorLog()
+            log.cursor = self.cursor
+            log.errorNo = e.errno
+            log.errorMessage = e.errmsg
+            log.moduleName = type(self).__name__
+            log.explanation = "INSERT INTO exchange_to_exchange"
+            log.addData()
+
+    def getData(self, url=None, accessToken=None, fromExchange=None, toExchange=None, window=None,
+                fromDate=None, toDate=None, limit=1, branch=None, returnFormat=None):
+
+        cursor = self.cursor
+        headers = {'Authorization': 'Bearer ' + accessToken}
+
+        # fromDate girilmemiş ise en erken tarihten itibaren
+        # toDate girilmemiş ise en son son tarihten itibaren
+        if (toDate == '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'from_exchange': fromExchange,
+                   'to_exchange': toExchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate == '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'from_exchange': fromExchange,
+                   'to_exchange': toExchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'from_exchange': fromExchange,
+                   'to_exchange': toExchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'from_exchange': fromExchange,
+                   'to_exchange': toExchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        try:
+            response = requests.get(url, headers=headers, params=prm)
+            response.raise_for_status()
+            records = response.json()
+            return records['result']['data']
+        except requests.exceptions.HTTPError as errh:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errh.response.status_code
+            log.errorMessage = errh.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Http Error: " + errh.response.url
+            log.addData()
+        except requests.exceptions.ConnectionError as errc:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errc.response.status_code
+            log.errorMessage = errc.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Error Connecting: " + errc.response.url
+            log.addData()
+        except requests.exceptions.Timeout as errt:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errt.response.status_code
+            log.errorMessage = errt.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Timeout Error: " + errt.response.url
+            log.addData()
+        except requests.exceptions.RequestException as err:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = err.response.status_code
+            log.errorMessage = err.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = err.response.url
+            log.addData()
+
+
+class WhaleRatio:
+    def __init__(self, cursor=None, indexDate=None, exchangeWhaleRatio=None,
+                 updateDate=datetime.now().strftime("%Y-%m-%d"),
+                 updateTime=datetime.now().strftime("%H:%M:%S")
+                 ):
+        self.cursor = cursor
+        self.indexDate = indexDate
+        self.exchangeWhaleRatio = exchangeWhaleRatio
+        self.updateDate = updateDate
+        self.updateTime = updateTime
+
+    def addData(self):
+        try:
+            self.cursor.execute(
+                "INSERT INTO whale_ratio (index_date, exchange_whale_ratio, "
+                " update_date, update_time) VALUES (?, ?, ?, ?)",
+                (self.indexDate, self.exchangeWhaleRatio,
+                 self.updateDate, self.updateTime))
+        except mariadb.Error as e:
+            # print(f"Error: {e.errno} {e.errmsg}")
+            log = ErrorLog()
+            log.cursor = self.cursor
+            log.errorNo = e.errno
+            log.errorMessage = e.errmsg
+            log.moduleName = type(self).__name__
+            log.explanation = "INSERT INTO whale_ratio"
+            log.addData()
+
+    def getData(self, url=None, accessToken=None, exchange=None, window=None,
+                fromDate=None, toDate=None, limit=1, branch=None, returnFormat=None):
+
+        cursor = self.cursor
+        headers = {'Authorization': 'Bearer ' + accessToken}
+
+        # fromDate girilmemiş ise en erken tarihten itibaren
+        # toDate girilmemiş ise en son son tarihten itibaren
+        if (toDate == '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate == '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        try:
+            response = requests.get(url, headers=headers, params=prm)
+            response.raise_for_status()
+            records = response.json()
+            return records['result']['data']
+        except requests.exceptions.HTTPError as errh:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errh.response.status_code
+            log.errorMessage = errh.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Http Error: " + errh.response.url
+            log.addData()
+        except requests.exceptions.ConnectionError as errc:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errc.response.status_code
+            log.errorMessage = errc.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Error Connecting: " + errc.response.url
+            log.addData()
+        except requests.exceptions.Timeout as errt:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errt.response.status_code
+            log.errorMessage = errt.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Timeout Error: " + errt.response.url
+            log.addData()
+        except requests.exceptions.RequestException as err:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = err.response.status_code
+            log.errorMessage = err.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = err.response.url
+            log.addData()
+
+
 class ErrorLog:
     def __init__(self, cursor=None, transactionDate=datetime.now().strftime("%Y-%m-%d"),
                  transactionTime=datetime.now().strftime("%H:%M:%S"), moduleName=None, errorNo=None,
