@@ -13,3 +13,4 @@
 /build
 /config/config.ini
 /*.spec
+/app.log

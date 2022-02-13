@@ -1,9 +1,9 @@
 from configparser import ConfigParser
 from datetime import datetime
 from datetime import timedelta
-
 import mariadb
 import requests
+import funclib
 
 
 class ConfigFile:
@@ -14,7 +14,8 @@ class ConfigFile:
     def readConfig(self):
         # create parser and read ini configuration file
         parser = ConfigParser()
-        parser.read(self.filename)
+        if not (parser.read(self.filename)):
+            raise Exception("{0} file not found".format(self.filename))
 
         # get section, default to mysql
         parameters = {}
@@ -46,7 +47,7 @@ class FearAndGreed:
                                 (self.periodDate, self.periodTime, self.indexValue, self.classification,
                                  self.updateDate, self.updateTime))
         except mariadb.Error as e:
-            print(f"Error: {e.errno} {e.errmsg}")
+            # print(f"Error: {e.errno} {e.errmsg}")
             log = ErrorLog()
             log.cursor = self.cursor
             log.errorNo = e.errno
@@ -70,49 +71,49 @@ class FearAndGreed:
             #    print('Type:', type(records))
             return records['data']
         except requests.exceptions.HTTPError as errh:
-            if cursor is None:
-                print("Http Error:", errh)
-            else:
-                log = ErrorLog()
-                log.cursor = cursor
-                log.errorNo = errh.response.status_code
-                log.errorMessage = errh.response.text
-                log.moduleName = "FearAndGreed getData()"
-                log.explanation = "Http Error: " + errh.response.url
-                log.addData()
+            # if cursor is None:
+            #     print("Http Error:", errh)
+            # else:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errh.response.status_code
+            log.errorMessage = errh.response.text
+            log.moduleName = "FearAndGreed getData()"
+            log.explanation = "Http Error: " + errh.response.url
+            log.addData()
         except requests.exceptions.ConnectionError as errc:
-            if cursor is None:
-                print("Error Connecting:", errc)
-            else:
-                log = ErrorLog()
-                log.cursor = cursor
-                log.errorNo = errc.response.status_code
-                log.errorMessage = errc.response.text
-                log.moduleName = "FearAndGreed getData()"
-                log.explanation = "Error Connecting: " + errc.response.url
-                log.addData()
+            # if cursor is None:
+            #     print("Error Connecting:", errc)
+            # else:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errc.response.status_code
+            log.errorMessage = errc.response.text
+            log.moduleName = "FearAndGreed getData()"
+            log.explanation = "Error Connecting: " + errc.response.url
+            log.addData()
         except requests.exceptions.Timeout as errt:
-            if cursor is None:
-                print("Timeout Error:", errt)
-            else:
-                log = ErrorLog()
-                log.cursor = cursor
-                log.errorNo = errt.response.status_code
-                log.errorMessage = errt.response.text
-                log.moduleName = "FearAndGreed getData()"
-                log.explanation = "Timeout Error: " + errt.response.url
-                log.addData()
+            # if cursor is None:
+            #     print("Timeout Error:", errt)
+            # else:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errt.response.status_code
+            log.errorMessage = errt.response.text
+            log.moduleName = "FearAndGreed getData()"
+            log.explanation = "Timeout Error: " + errt.response.url
+            log.addData()
         except requests.exceptions.RequestException as err:
-            if cursor is None:
-                print(err)
-            else:
-                log = ErrorLog()
-                log.cursor = cursor
-                log.errorNo = err.response.status_code
-                log.errorMessage = err.response.text
-                log.moduleName = "FearAndGreed getData()"
-                log.explanation = err.response.url
-                log.addData()
+            # if cursor is None:
+            #     print(err)
+            # else:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = err.response.status_code
+            log.errorMessage = err.response.text
+            log.moduleName = "FearAndGreed getData()"
+            log.explanation = err.response.url
+            log.addData()
 
 
 class TakerBuySell:
@@ -140,7 +141,7 @@ class TakerBuySell:
                                  self.takerBuyRatio, self.takerSellRatio, self.takerBuySellRatio,
                                  self.updateDate, self.updateTime))
         except mariadb.Error as e:
-            print(f"Error: {e.errno} {e.errmsg}")
+            # print(f"Error: {e.errno} {e.errmsg}")
             log = ErrorLog()
             log.cursor = self.cursor
             log.errorNo = e.errno
@@ -149,67 +150,108 @@ class TakerBuySell:
             log.explanation = "INSERT INTO taker_buy_sell"
             log.addData()
 
-    def getData(self, url=None, accessToken=None, recordCount=1):
-        fromDate = (datetime.now() - timedelta(days=10)).strftime('%Y%m%d')
-        print(f"{fromDate}")
+    def getData(self,
+                url=None,
+                accessToken=None,
+                exchange=None,
+                window=None,
+                fromDate=None,
+                toDate=None,
+                limit=1,
+                returnFormat=None):
+
+        # if toDate == '':
+        #     toDate = datetime.now().strftime('%Y%m%d')
+        # if fromDate == '':
+        #     fromDate = toDate
+        # fromDate = (datetime.now() - timedelta(days=10)).strftime('%Y%m%d')
 
         cursor = self.cursor
         headers = {'Authorization': 'Bearer ' + accessToken}
-        prm = {'window': 'day',
-               #               'from': fromDate,
-               #               'to': fromDate,
-               'limit': recordCount,
-               'exchange': 'all_exchange'
-               }
+
+        # fromDate girilmemiş ise en erken tarihten itibaren
+        # toDate girilmemiş ise en son son tarihten itibaren
+        if (toDate == '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'format': returnFormat
+                   }
+        if (toDate == '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'format': returnFormat
+                   }
         try:
             response = requests.get(url, headers=headers, params=prm)
             response.raise_for_status()
             records = response.json()
             return records['result']['data']
         except requests.exceptions.HTTPError as errh:
-            if cursor is None:
-                print("Http Error:", errh)
-            else:
-                log = ErrorLog()
-                log.cursor = cursor
-                log.errorNo = errh.response.status_code
-                log.errorMessage = errh.response.text
-                log.moduleName = "TakerBuySell getData()"
-                log.explanation = "Http Error: " + errh.response.url
-                log.addData()
+            # if cursor is None:
+            #     print("Http Error:", errh)
+            # else:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errh.response.status_code
+            log.errorMessage = errh.response.text
+            log.moduleName = "TakerBuySell getData()"
+            log.explanation = "Http Error: " + errh.response.url
+            log.addData()
         except requests.exceptions.ConnectionError as errc:
-            if cursor is None:
-                print("Error Connecting:", errc)
-            else:
-                log = ErrorLog()
-                log.cursor = cursor
-                log.errorNo = errc.response.status_code
-                log.errorMessage = errc.response.text
-                log.moduleName = "TakerBuySell getData()"
-                log.explanation = "Error Connecting: " + errc.response.url
-                log.addData()
+            # if cursor is None:
+            #     print("Error Connecting:", errc)
+            # else:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errc.response.status_code
+            log.errorMessage = errc.response.text
+            log.moduleName = "TakerBuySell getData()"
+            log.explanation = "Error Connecting: " + errc.response.url
+            log.addData()
         except requests.exceptions.Timeout as errt:
-            if cursor is None:
-                print("Timeout Error:", errt)
-            else:
-                log = ErrorLog()
-                log.cursor = cursor
-                log.errorNo = errt.response.status_code
-                log.errorMessage = errt.response.text
-                log.moduleName = "TakerBuySell getData()"
-                log.explanation = "Timeout Error: " + errt.response.url
-                log.addData()
+            # if cursor is None:
+            #     print("Timeout Error:", errt)
+            # else:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errt.response.status_code
+            log.errorMessage = errt.response.text
+            log.moduleName = "TakerBuySell getData()"
+            log.explanation = "Timeout Error: " + errt.response.url
+            log.addData()
         except requests.exceptions.RequestException as err:
-            if cursor is None:
-                print(err)
-            else:
-                log = ErrorLog()
-                log.cursor = cursor
-                log.errorNo = err.response.status_code
-                log.errorMessage = err.response.text
-                log.moduleName = "TakerBuySell getData()"
-                log.explanation = err.response.url
-                log.addData()
+            # if cursor is None:
+            #     print(err)
+            # else:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = err.response.status_code
+            log.errorMessage = err.response.text
+            log.moduleName = "TakerBuySell getData()"
+            log.explanation = err.response.url
+            log.addData()
 
 
 class ErrorLog:
@@ -225,10 +267,14 @@ class ErrorLog:
         self.explanation = explanation
 
     def addData(self):
-        try:
-            self.cursor.execute("INSERT INTO errorlog (transaction_date, transaction_time, module_name, error_no, "
-                                "error_message, explanation) VALUES (?, ?, ?, ?, ?, ?)",
-                                (self.transactionDate, self.transactionTime, self.moduleName, self.errorNo,
-                                 self.errorMessage, self.explanation))
-        except mariadb.Error as e:
-            print(f"Error: {e.errno} {e.errmsg}")
+        if self.cursor is None:
+            funclib.log_error(f"{self.moduleName} {self.errorNo} {self.errorMessage}")
+        else:
+            try:
+                self.cursor.execute("INSERT INTO errorlog (transaction_date, transaction_time, module_name, error_no, "
+                                    "error_message, explanation) VALUES (?, ?, ?, ?, ?, ?)",
+                                    (self.transactionDate, self.transactionTime, self.moduleName, self.errorNo,
+                                     self.errorMessage, self.explanation))
+            except mariadb.Error as ex:
+                # print(f"Error: {ex.errno} {ex.errmsg}")
+                funclib.log_traceback(ex)

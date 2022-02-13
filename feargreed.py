@@ -31,8 +31,9 @@ def main():
     try:
         config.section = "database"
         dbConfig = config.readConfig()
-    except:
-        print(f"Could not read config file")
+    except Exception as ex:
+        # print(f"Could not read config file")
+        funclib.log_traceback(ex)
         sys.exit(1)
 
     # Connect to MariaDB Platform
@@ -45,8 +46,9 @@ def main():
             database=dbConfig["database"],
             autocommit=True
         )
-    except mariadb.Error as e:
-        print(f"Error connecting to MariaDB Platform: {e}")
+    except mariadb.Error as ex:
+        # print(f"Error connecting to MariaDB Platform: {ex}")
+        funclib.log_traceback(ex)
         sys.exit(1)
 
     # Get Cursor
@@ -56,8 +58,9 @@ def main():
     try:
         config.section = "fearandgreed"
         fagConfig = config.readConfig()
-    except:
-        print(f"Could not read config file")
+    except Exception as ex:
+        # print(f"Could not read config file")
+        funclib.log_traceback(ex)
         sys.exit(1)
 
     url = fagConfig["url"]
