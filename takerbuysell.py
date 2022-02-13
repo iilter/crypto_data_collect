@@ -37,8 +37,9 @@ def main(exchange, window, from_date, to_date, limit, return_format):
     # if len(sys.argv) > 1:
     #     argumentRecordCount = sys.argv[1]
 
-    config_dir = funclib.resource_path("config")
-    config_file = config_dir + '\\' + 'config.ini'
+    # config_dir = funclib.resource_path("config")
+    # config_file = config_dir + '\\' + 'config.ini'
+    config_file = 'config.ini'
     # Read database section from config.ini
     config = cfg()
     config.filename = config_file

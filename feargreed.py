@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import datetime
+import click
 import mariadb as mariadb
 
 import funclib
@@ -8,7 +9,12 @@ from classlib import ConfigFile as cfg
 from classlib import FearAndGreed as fagClass
 
 
-def main():
+@click.command()
+@click.option('--limit', default='1',
+              help='Limit the number of returned results. The default value is 1, use 0 for all available data.')
+@click.option('--return_format', default='json',
+              help='A format type about return message type. Supported formats are json, csv. The default is json')
+def main(limit, return_format):
     # print(f"Arguments count: {len(sys.argv)}")
     # for i, arg in enumerate(sys.argv):
     #     print(f"Argument {i:>6}:{arg}")
@@ -19,13 +25,14 @@ def main():
     # Çekilecek kayıt sayısı programa argüman olarak verilmemiş ise tek (son) kayıt çekmek için değer 1 yapılır.
     # sys.argv[0] da programın ismi yer alır
     #
-    argumentRecordCount = 1
-    if len(sys.argv) > 1:
-        argumentRecordCount = sys.argv[1]
+    # argumentRecordCount = 1
+    # if len(sys.argv) > 1:
+    #     argumentRecordCount = sys.argv[1]
 
-    config_dir = funclib.resource_path("config")
-    config_file = config_dir + '\\' + 'config.ini'
+    # config_dir = funclib.resource_path("config")
+    # config_file = config_dir + '\\' + 'config.ini'
     # Read database section from config.ini
+    config_file = 'config.ini'
     config = cfg()
     config.filename = config_file
     try:
@@ -66,7 +73,7 @@ def main():
     url = fagConfig["url"]
     fag = fagClass()
     fag.cursor = cursor
-    records = fag.getData(url, argumentRecordCount)
+    records = fag.getData(url, limit, return_format)
     for record in records:
         ts = int(record['timestamp'])
         dt = datetime.fromtimestamp(ts)

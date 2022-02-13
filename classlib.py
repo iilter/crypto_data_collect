@@ -56,19 +56,18 @@ class FearAndGreed:
             log.explanation = "INSERT INTO fear_greed"
             log.addData()
 
-    def getData(self, url=None, recordCount=1):
+    def getData(self, url=None, limit=1, returnFormat=None):
         #
-        # recordCount = 0 ise bütün index bilgileri çekilir
-        # recordCount = 1 ise son index bilgisi çekilir
-        # recordCount = N ise son N tane index bilgisi çekilir
+        # limit = 0 ise bütün index bilgileri çekilir
+        # limit = 1 ise son index bilgisi çekilir
+        # limit = N ise son N tane index bilgisi çekilir
         #
         cursor = self.cursor
-        prm = {'limit': recordCount}
+        prm = {'limit': limit, 'format': returnFormat}
         try:
             response = requests.get(url, params=prm)
             response.raise_for_status()
             records = response.json()
-            #    print('Type:', type(records))
             return records['data']
         except requests.exceptions.HTTPError as errh:
             # if cursor is None:
@@ -160,10 +159,6 @@ class TakerBuySell:
                 limit=1,
                 returnFormat=None):
 
-        # if toDate == '':
-        #     toDate = datetime.now().strftime('%Y%m%d')
-        # if fromDate == '':
-        #     fromDate = toDate
         # fromDate = (datetime.now() - timedelta(days=10)).strftime('%Y%m%d')
 
         cursor = self.cursor
