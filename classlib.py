@@ -853,6 +853,234 @@ class Leverage:
             log.addData()
 
 
+class Netflow:
+    def __init__(self, cursor=None, indexDate=None, netflowTotal=None,
+                 updateDate=datetime.now().strftime("%Y-%m-%d"),
+                 updateTime=datetime.now().strftime("%H:%M:%S")
+                 ):
+        self.cursor = cursor
+        self.indexDate = indexDate
+        self.netflowTotal = netflowTotal
+        self.updateDate = updateDate
+        self.updateTime = updateTime
+
+    def addData(self):
+        try:
+            self.cursor.execute("INSERT INTO netflow (index_date, netflow_total, "
+                                "update_date, update_time) VALUES (?, ?, ?, ?)",
+                                (self.indexDate, self.netflowTotal,
+                                 self.updateDate, self.updateTime))
+        except mariadb.Error as e:
+            # print(f"Error: {e.errno} {e.errmsg}")
+            log = ErrorLog()
+            log.cursor = self.cursor
+            log.errorNo = e.errno
+            log.errorMessage = e.errmsg
+            log.moduleName = type(self).__name__
+            log.explanation = "INSERT INTO netflow"
+            log.addData()
+
+    def getData(self, url=None, accessToken=None, token=None, exchange=None, window=None,
+                fromDate=None, toDate=None, limit=1, branch=None, returnFormat=None):
+
+        cursor = self.cursor
+        headers = {'Authorization': 'Bearer ' + accessToken}
+
+        # fromDate girilmemiş ise en erken tarihten itibaren
+        # toDate girilmemiş ise en son son tarihten itibaren
+        if (toDate == '') and (fromDate == ''):
+            prm = {'token': token,
+                   'window': window,
+                   # 'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate == '') and (fromDate != ''):
+            prm = {'token': token,
+                   'window': window,
+                   'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate == ''):
+            prm = {'token': token,
+                   'window': window,
+                   # 'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate != ''):
+            prm = {'token': token,
+                   'window': window,
+                   'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        try:
+            response = requests.get(url, headers=headers, params=prm)
+            response.raise_for_status()
+            records = response.json()
+            return records['result']['data']
+        except requests.exceptions.HTTPError as errh:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errh.response.status_code
+            log.errorMessage = errh.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Http Error: " + errh.response.url
+            log.addData()
+        except requests.exceptions.ConnectionError as errc:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errc.response.status_code
+            log.errorMessage = errc.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Error Connecting: " + errc.response.url
+            log.addData()
+        except requests.exceptions.Timeout as errt:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errt.response.status_code
+            log.errorMessage = errt.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Timeout Error: " + errt.response.url
+            log.addData()
+        except requests.exceptions.RequestException as err:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = err.response.status_code
+            log.errorMessage = err.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = err.response.url
+            log.addData()
+
+
+class Inflow:
+    def __init__(self, cursor=None, indexDate=None, inflowTotal=None, inflowTop10=None, inflowMean=None,
+                 inflowMeanMa7=None,
+                 updateDate=datetime.now().strftime("%Y-%m-%d"),
+                 updateTime=datetime.now().strftime("%H:%M:%S")
+                 ):
+        self.cursor = cursor
+        self.indexDate = indexDate
+        self.inflowTotal = inflowTotal
+        self.inflowTop10 = inflowTop10
+        self.inflowMean = inflowMean
+        self.inflowMeanMa7 = inflowMeanMa7
+        self.updateDate = updateDate
+        self.updateTime = updateTime
+
+    def addData(self):
+        try:
+            self.cursor.execute("INSERT INTO inflow (index_date, inflow_total, inflow_top10, inflow_mean, "
+                                "inflow_mean_ma7, update_date, update_time) VALUES (?, ?, ?, ?, ? ,? ,?)",
+                                (self.indexDate, self.inflowTotal, self.inflowTop10, self.inflowMean,
+                                 self.inflowMeanMa7, self.updateDate, self.updateTime))
+        except mariadb.Error as e:
+            # print(f"Error: {e.errno} {e.errmsg}")
+            log = ErrorLog()
+            log.cursor = self.cursor
+            log.errorNo = e.errno
+            log.errorMessage = e.errmsg
+            log.moduleName = type(self).__name__
+            log.explanation = "INSERT INTO inflow"
+            log.addData()
+
+    def getData(self, url=None, accessToken=None, exchange=None, window=None,
+                fromDate=None, toDate=None, limit=1, branch=None, returnFormat=None):
+
+        cursor = self.cursor
+        headers = {'Authorization': 'Bearer ' + accessToken}
+
+        # fromDate girilmemiş ise en erken tarihten itibaren
+        # toDate girilmemiş ise en son son tarihten itibaren
+        if (toDate == '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate == '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   # 'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate == ''):
+            prm = {'window': window,
+                   # 'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        if (toDate != '') and (fromDate != ''):
+            prm = {'window': window,
+                   'from': fromDate,
+                   'to': toDate,
+                   'limit': limit,
+                   'exchange': exchange,
+                   'branch': branch,
+                   'format': returnFormat
+                   }
+        try:
+            response = requests.get(url, headers=headers, params=prm)
+            response.raise_for_status()
+            records = response.json()
+            return records['result']['data']
+        except requests.exceptions.HTTPError as errh:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errh.response.status_code
+            log.errorMessage = errh.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Http Error: " + errh.response.url
+            log.addData()
+        except requests.exceptions.ConnectionError as errc:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errc.response.status_code
+            log.errorMessage = errc.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Error Connecting: " + errc.response.url
+            log.addData()
+        except requests.exceptions.Timeout as errt:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = errt.response.status_code
+            log.errorMessage = errt.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = "Timeout Error: " + errt.response.url
+            log.addData()
+        except requests.exceptions.RequestException as err:
+            log = ErrorLog()
+            log.cursor = cursor
+            log.errorNo = err.response.status_code
+            log.errorMessage = err.response.text
+            log.moduleName = type(self).__name__
+            log.explanation = err.response.url
+            log.addData()
+
+
 class ErrorLog:
     def __init__(self, cursor=None, transactionDate=datetime.now().strftime("%Y-%m-%d"),
                  transactionTime=datetime.now().strftime("%H:%M:%S"), moduleName=None, errorNo=None,
